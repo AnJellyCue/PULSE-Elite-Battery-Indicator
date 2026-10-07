@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import os
+import fcntl
+
+DEVICE = "/dev/hidraw0"
+REPORT_ID = 0x82
+LENGTH = 64
+
+HIDIOCGFEATURE = lambda length: 0xC0000000 | (length << 16) | (ord("H") << 8) | 0x07
+
+fd = os.open(DEVICE, os.O_RDWR)
+
+try:
+    buf = bytearray(LENGTH)
+    buf[0] = REPORT_ID
+
+    result = fcntl.ioctl(fd, HIDIOCGFEATURE(LENGTH), buf)
+
+    if result < 4 or buf[0] != REPORT_ID:
+        raise RuntimeError("Invalid PULSE Elite status report")
+
+    level = buf[3]
+    percent = round(level / 15 * 100)
+
+    print(f"🎧 PULSE Elite")
+    print(f"🔋 {percent}%")
+
+finally:
+    os.close(fd)
